@@ -17,14 +17,42 @@ This is the **simplest way** to send push notifications using our backend API. N
 
 ---
 
-## 🧪 How to Use
+## 📋 Detailed API Documentation
 
-### 1. **Check API Status**
+---
+
+### 1. **GET /api/simple/status - Check API Status**
+
+Check if the push notification API is running and available.
+
+#### **Input Fields:**
+- **No input required** - This is a GET request with no parameters
+
+#### **Output Format:**
+```json
+{
+  "success": boolean,
+  "message": string,
+  "data": {
+    "server": string,
+    "expoSDK": string,
+    "timestamp": string (ISO 8601 format),
+    "endpoints": {
+      "send": string,
+      "sendMultiple": string,
+      "validateToken": string,
+      "status": string
+    }
+  }
+}
+```
+
+#### **Example Request:**
 ```bash
 curl http://localhost:3000/api/simple/status
 ```
 
-**Response:**
+#### **Example Response:**
 ```json
 {
   "success": true,
@@ -32,14 +60,63 @@ curl http://localhost:3000/api/simple/status
   "data": {
     "server": "Online",
     "expoSDK": "Available",
-    "timestamp": "2025-01-27T10:30:00.000Z"
+    "timestamp": "2025-01-27T10:30:00.000Z",
+    "endpoints": {
+      "send": "POST /api/simple/send",
+      "sendMultiple": "POST /api/simple/send-multiple",
+      "validateToken": "POST /api/simple/validate-token",
+      "status": "GET /api/simple/status"
+    }
   }
 }
 ```
 
-### 2. **Send Notification to One Device**
+#### **Postman Setup:**
+- **Method:** `GET`
+- **URL:** `http://localhost:3000/api/simple/status`
+- **Headers:** None required
+- **Body:** None
 
-**Request:**
+---
+
+### 2. **POST /api/simple/send - Send Notification to One Device**
+
+Send a push notification to a single device using its Expo push token.
+
+#### **Input Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| `token` | string | ✅ Yes | Valid Expo push token | `"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"` |
+| `title` | string | ✅ Yes | Notification title (max 256 chars) | `"Hello!"` |
+| `body` | string | ✅ Yes | Notification body message | `"This is a test notification"` |
+| `data` | object | ❌ No | Custom data to send with notification | `{"screen": "Home", "action": "open"}` |
+
+#### **Input Format (JSON):**
+```json
+{
+  "token": "string (required) - Expo push token starting with ExponentPushToken[",
+  "title": "string (required) - Notification title",
+  "body": "string (required) - Notification message body",
+  "data": {
+    "key": "value - Optional custom data object"
+  }
+}
+```
+
+#### **Output Format:**
+```json
+{
+  "success": boolean,
+  "message": string,
+  "data": {
+    "ticketId": string,
+    "status": "ok" | "error"
+  }
+}
+```
+
+#### **Example Request:**
 ```bash
 curl -X POST http://localhost:3000/api/simple/send \
   -H "Content-Type: application/json" \
@@ -54,7 +131,7 @@ curl -X POST http://localhost:3000/api/simple/send \
   }'
 ```
 
-**Response:**
+#### **Success Response (200):**
 ```json
 {
   "success": true,
@@ -66,9 +143,88 @@ curl -X POST http://localhost:3000/api/simple/send \
 }
 ```
 
-### 3. **Send to Multiple Devices**
+#### **Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "token, title, and body are required",
+  "required": ["token", "title", "body"]
+}
+```
 
-**Request:**
+#### **Error Response (400 - Invalid Token):**
+```json
+{
+  "success": false,
+  "message": "Invalid Expo push token format",
+  "expectedFormat": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+}
+```
+
+#### **Postman Setup:**
+- **Method:** `POST`
+- **URL:** `http://localhost:3000/api/simple/send`
+- **Headers:** 
+  - `Content-Type: application/json`
+- **Body (raw JSON):**
+```json
+{
+  "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+  "title": "Hello from Postman!",
+  "body": "This notification was sent via Postman",
+  "data": {
+    "source": "postman",
+    "timestamp": "2025-01-27"
+  }
+}
+```
+
+---
+
+### 3. **POST /api/simple/send-multiple - Send to Multiple Devices**
+
+Send the same push notification to multiple devices at once.
+
+#### **Input Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| `tokens` | array | ✅ Yes | Array of valid Expo push tokens | `["ExponentPushToken[xxx]", "ExponentPushToken[yyy]"]` |
+| `title` | string | ✅ Yes | Notification title (max 256 chars) | `"Group Message"` |
+| `body` | string | ✅ Yes | Notification body message | `"This goes to all devices"` |
+| `data` | object | ❌ No | Custom data to send with notification | `{"type": "announcement"}` |
+
+#### **Input Format (JSON):**
+```json
+{
+  "tokens": [
+    "string (required) - Array of Expo push tokens"
+  ],
+  "title": "string (required) - Notification title",
+  "body": "string (required) - Notification message body",
+  "data": {
+    "key": "value - Optional custom data object"
+  }
+}
+```
+
+#### **Output Format:**
+```json
+{
+  "success": boolean,
+  "message": string,
+  "data": {
+    "totalTokens": number,
+    "validTokens": number,
+    "invalidTokens": number,
+    "sentCount": number,
+    "errorCount": number,
+    "invalidTokens": array
+  }
+}
+```
+
+#### **Example Request:**
 ```bash
 curl -X POST http://localhost:3000/api/simple/send-multiple \
   -H "Content-Type: application/json" \
@@ -86,7 +242,7 @@ curl -X POST http://localhost:3000/api/simple/send-multiple \
   }'
 ```
 
-**Response:**
+#### **Success Response (200):**
 ```json
 {
   "success": true,
@@ -96,14 +252,100 @@ curl -X POST http://localhost:3000/api/simple/send-multiple \
     "validTokens": 3,
     "invalidTokens": 0,
     "sentCount": 3,
-    "errorCount": 0
+    "errorCount": 0,
+    "invalidTokens": []
   }
 }
 ```
 
-### 4. **Validate Token**
+#### **Partial Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Notifications processed",
+  "data": {
+    "totalTokens": 5,
+    "validTokens": 3,
+    "invalidTokens": 2,
+    "sentCount": 3,
+    "errorCount": 0,
+    "invalidTokens": [
+      "InvalidToken1",
+      "InvalidToken2"
+    ]
+  }
+}
+```
 
-**Request:**
+#### **Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "tokens (array), title, and body are required",
+  "required": ["tokens", "title", "body"]
+}
+```
+
+#### **Error Response (400 - Empty Array):**
+```json
+{
+  "success": false,
+  "message": "tokens array cannot be empty"
+}
+```
+
+#### **Postman Setup:**
+- **Method:** `POST`
+- **URL:** `http://localhost:3000/api/simple/send-multiple`
+- **Headers:** 
+  - `Content-Type: application/json`
+- **Body (raw JSON):**
+```json
+{
+  "tokens": [
+    "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "ExponentPushToken[yyyyyyyyyyyyyyyyyyyyyy]"
+  ],
+  "title": "Multiple Devices",
+  "body": "This goes to multiple devices",
+  "data": {
+    "type": "broadcast"
+  }
+}
+```
+
+---
+
+### 4. **POST /api/simple/validate-token - Validate Expo Push Token**
+
+Validate if a token is in the correct Expo push token format.
+
+#### **Input Fields:**
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| `token` | string | ✅ Yes | Token to validate | `"ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"` |
+
+#### **Input Format (JSON):**
+```json
+{
+  "token": "string (required) - Token to validate"
+}
+```
+
+#### **Output Format:**
+```json
+{
+  "success": boolean,
+  "data": {
+    "token": string,
+    "isValid": boolean,
+    "message": string
+  }
+}
+```
+
+#### **Example Request:**
 ```bash
 curl -X POST http://localhost:3000/api/simple/validate-token \
   -H "Content-Type: application/json" \
@@ -112,7 +354,7 @@ curl -X POST http://localhost:3000/api/simple/validate-token \
   }'
 ```
 
-**Response:**
+#### **Success Response - Valid Token (200):**
 ```json
 {
   "success": true,
@@ -123,6 +365,88 @@ curl -X POST http://localhost:3000/api/simple/validate-token \
   }
 }
 ```
+
+#### **Success Response - Invalid Token (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "InvalidTokenFormat",
+    "isValid": false,
+    "message": "Invalid Expo push token format"
+  }
+}
+```
+
+#### **Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "token is required"
+}
+```
+
+#### **Postman Setup:**
+- **Method:** `POST`
+- **URL:** `http://localhost:3000/api/simple/validate-token`
+- **Headers:** 
+  - `Content-Type: application/json`
+- **Body (raw JSON):**
+```json
+{
+  "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+}
+```
+
+---
+
+## 📊 Common Response Codes
+
+| HTTP Code | Status | Description |
+|-----------|--------|-------------|
+| 200 | Success | Request completed successfully |
+| 400 | Bad Request | Invalid input data or missing required fields |
+| 500 | Internal Server Error | Server error occurred |
+
+---
+
+## 🧪 Quick Testing Guide
+
+### **Test Sequence:**
+
+1. **Check API Status:**
+   ```bash
+   curl http://localhost:3000/api/simple/status
+   ```
+
+2. **Validate Your Token:**
+   ```bash
+   curl -X POST http://localhost:3000/api/simple/validate-token \
+     -H "Content-Type: application/json" \
+     -d '{"token": "YOUR_EXPO_PUSH_TOKEN"}'
+   ```
+
+3. **Send Single Notification:**
+   ```bash
+   curl -X POST http://localhost:3000/api/simple/send \
+     -H "Content-Type: application/json" \
+     -d '{
+       "token": "YOUR_EXPO_PUSH_TOKEN",
+       "title": "Test",
+       "body": "Hello World!"
+     }'
+   ```
+
+4. **Send to Multiple Devices:**
+   ```bash
+   curl -X POST http://localhost:3000/api/simple/send-multiple \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tokens": ["TOKEN1", "TOKEN2"],
+       "title": "Broadcast",
+       "body": "Message for all"
+     }'
+   ```
 
 ---
 

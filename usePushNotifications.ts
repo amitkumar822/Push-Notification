@@ -6,9 +6,14 @@ import Constants from "expo-constants";
 
 import { Platform } from "react-native";
 
+// Import server API functions
+import { sendNotification, createNotificationPayload } from "./server/api/notificationService.js";
+
 export interface PushNotificationState {
   expoPushToken?: Notifications.ExpoPushToken;
   notification?: Notifications.Notification;
+  sendTestNotification?: () => Promise<void>;
+  isSending?: boolean;
 }
 
 export const usePushNotifications = (): PushNotificationState => {
@@ -29,6 +34,8 @@ export const usePushNotifications = (): PushNotificationState => {
   const [notification, setNotification] = useState<
     Notifications.Notification | undefined
   >();
+
+  const [isSending, setIsSending] = useState(false);
 
   const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
   const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
@@ -89,8 +96,41 @@ export const usePushNotifications = (): PushNotificationState => {
     };
   }, []);
 
+  // Function to send test notification
+  const sendTestNotification = async () => {
+    if (!expoPushToken) {
+      alert('No push token available');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const payload = createNotificationPayload(
+        expoPushToken.data,
+        'Test Notification',
+        'This is a test notification from your app!',
+        {
+          screen: 'Test',
+          action: 'test',
+          timestamp: new Date().toISOString(),
+        }
+      );
+
+      const result = await sendNotification(payload);
+      console.log('✅ Test notification sent:', result);
+      alert('Test notification sent successfully!');
+    } catch (error: any) {
+      console.error('❌ Failed to send test notification:', error);
+      alert(`Failed to send notification: ${error.message}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return {
     expoPushToken,
     notification,
+    sendTestNotification,
+    isSending,
   };
 };
