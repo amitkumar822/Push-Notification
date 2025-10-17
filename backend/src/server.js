@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter, notificationLimiter, tokenRegistrationLimiter } from './middleware/rateLimiter.js';
 
@@ -77,7 +78,13 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     endpoints: {
-      health: 'GET /health',
+      // Authentication
+      register: 'POST /api/auth/register',
+      login: 'POST /api/auth/login',
+      profile: 'GET /api/auth/profile',
+      verify: 'GET /api/auth/verify',
+      logout: 'POST /api/auth/logout',
+      // Notifications
       tokenRegistration: 'POST /api/notifications/token',
       sendToUser: 'POST /api/notifications/send',
       sendToMultiple: 'POST /api/notifications/send-multiple',
@@ -109,6 +116,7 @@ app.use('/api/notifications', (req, res, next) => {
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware
@@ -124,6 +132,11 @@ app.use((req, res) => {
     availableEndpoints: [
       'GET /',
       'GET /health',
+      'POST /api/auth/register',
+      'POST /api/auth/login',
+      'GET /api/auth/profile',
+      'GET /api/auth/verify',
+      'POST /api/auth/logout',
       'POST /api/notifications/token',
       'POST /api/notifications/send',
       'POST /api/notifications/send-multiple',

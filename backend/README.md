@@ -169,25 +169,618 @@ LOG_LEVEL=info
 
 ### Base URL: `http://localhost:3000`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | API documentation |
-| GET | `/health` | Health check |
-| POST | `/api/notifications/token` | Register push token |
-| GET | `/api/notifications/tokens/:userId` | Get user's tokens |
-| DELETE | `/api/notifications/token/:tokenId` | Delete token |
-| PUT | `/api/notifications/token/:tokenId/preferences` | Update token preferences |
-| POST | `/api/notifications/send` | Send to one user |
-| POST | `/api/notifications/send-multiple` | Send to multiple users |
-| POST | `/api/notifications/send-all` | Send to all users |
-| POST | `/api/notifications/send-by-device` | Send by device type |
-| GET | `/api/notifications/stats` | Get statistics |
-| POST | `/api/notifications/cleanup` | Cleanup inactive tokens |
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/` | API documentation | ❌ No |
+| GET | `/health` | Health check | ❌ No |
+| **Authentication Endpoints** | | | |
+| POST | `/api/auth/register` | Register new user | ❌ No |
+| POST | `/api/auth/login` | Login user | ❌ No |
+| GET | `/api/auth/profile` | Get user profile | ✅ Yes |
+| PUT | `/api/auth/profile` | Update profile | ✅ Yes |
+| PUT | `/api/auth/change-password` | Change password | ✅ Yes |
+| GET | `/api/auth/verify` | Verify token | ✅ Yes |
+| POST | `/api/auth/logout` | Logout user | ✅ Yes |
+| **Notification Endpoints** | | | |
+| POST | `/api/notifications/token` | Register push token | ❌ No* |
+| GET | `/api/notifications/tokens/:userId` | Get user's tokens | ❌ No |
+| DELETE | `/api/notifications/token/:tokenId` | Delete token | ❌ No |
+| PUT | `/api/notifications/token/:tokenId/preferences` | Update token preferences | ❌ No |
+| POST | `/api/notifications/send` | Send to one user | ❌ No |
+| POST | `/api/notifications/send-multiple` | Send to multiple users | ❌ No |
+| POST | `/api/notifications/send-all` | Send to all users | ❌ No |
+| POST | `/api/notifications/send-by-device` | Send by device type | ❌ No |
+| GET | `/api/notifications/stats` | Get statistics | ❌ No |
+| POST | `/api/notifications/cleanup` | Cleanup inactive tokens | ❌ No |
 
-## 🧪 Testing the API
+*Authentication optional - can register tokens anonymously or with user ID
 
-### 1. Register a Push Token
+---
 
+## 📋 Detailed API Documentation
+
+### 1. **GET** `/` - API Documentation
+
+**Description:** Get API documentation and available endpoints
+
+**Input:** None
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Expo Push Notification Server",
+  "version": "1.0.0",
+  "environment": "development",
+  "endpoints": {
+    "health": "GET /health",
+    "tokenRegistration": "POST /api/notifications/token",
+    "sendToUser": "POST /api/notifications/send",
+    "sendToMultiple": "POST /api/notifications/send-multiple",
+    "sendToAll": "POST /api/notifications/send-all",
+    "sendByDevice": "POST /api/notifications/send-by-device",
+    "getUserTokens": "GET /api/notifications/tokens/:userId",
+    "deleteToken": "DELETE /api/notifications/token/:tokenId",
+    "updatePreferences": "PUT /api/notifications/token/:tokenId/preferences",
+    "stats": "GET /api/notifications/stats",
+    "cleanup": "POST /api/notifications/cleanup"
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `GET`
+- URL: `http://localhost:3000/`
+- Headers: None required
+
+---
+
+### 2. **GET** `/health` - Health Check
+
+**Description:** Check if the server is running and healthy
+
+**Input:** None
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Server is healthy",
+  "timestamp": "2025-01-27T10:30:00.000Z",
+  "uptime": 3600.5,
+  "environment": "development"
+}
+```
+
+**Postman Setup:**
+- Method: `GET`
+- URL: `http://localhost:3000/health`
+- Headers: None required
+
+---
+
+### 3. **POST** `/api/notifications/token` - Register Push Token
+
+**Description:** Register a new push token for a user
+
+**Input Fields:**
+```json
+{
+  "userId": "string (required)",           // User identifier
+  "token": "string (required)",           // Expo push token (ExponentPushToken[...])
+  "deviceType": "string (required)",      // ios, android, or web
+  "deviceInfo": {                         // Optional device information
+    "brand": "string",                    // Device brand (e.g., "Samsung")
+    "modelName": "string",                // Device model (e.g., "Galaxy S21")
+    "osVersion": "string",                // OS version (e.g., "Android 12")
+    "appVersion": "string"                // App version (e.g., "1.0.0")
+  }
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Push token registered successfully",
+  "data": {
+    "id": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "userId": "user123",
+    "deviceType": "android",
+    "isActive": true,
+    "createdAt": "2025-01-27T10:30:00.000Z"
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/token`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "userId": "user123",
+  "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+  "deviceType": "android",
+  "deviceInfo": {
+    "brand": "Samsung",
+    "modelName": "Galaxy S21",
+    "osVersion": "Android 12",
+    "appVersion": "1.0.0"
+  }
+}
+```
+
+---
+
+### 4. **GET** `/api/notifications/tokens/:userId` - Get User's Tokens
+
+**Description:** Get all active tokens for a specific user
+
+**Input:** 
+- URL Parameter: `userId` (string, required)
+
+**Output:**
+```json
+{
+  "success": true,
+  "data": {
+    "userId": "user123",
+    "tokenCount": 2,
+    "tokens": [
+      {
+        "id": "65f1a2b3c4d5e6f7g8h9i0j1",
+        "deviceType": "android",
+        "deviceInfo": {
+          "brand": "Samsung",
+          "modelName": "Galaxy S21",
+          "osVersion": "Android 12"
+        },
+        "isActive": true,
+        "lastUsed": "2025-01-27T10:30:00.000Z",
+        "notificationCount": 5,
+        "createdAt": "2025-01-27T09:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `GET`
+- URL: `http://localhost:3000/api/notifications/tokens/user123`
+- Headers: None required
+
+---
+
+### 5. **DELETE** `/api/notifications/token/:tokenId` - Delete Token
+
+**Description:** Deactivate a push token
+
+**Input:**
+- URL Parameter: `tokenId` (string, required) - MongoDB ObjectId
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Token deactivated successfully",
+  "data": {
+    "tokenId": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "userId": "user123"
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `DELETE`
+- URL: `http://localhost:3000/api/notifications/token/65f1a2b3c4d5e6f7g8h9i0j1`
+- Headers: None required
+
+---
+
+### 6. **PUT** `/api/notifications/token/:tokenId/preferences` - Update Token Preferences
+
+**Description:** Update notification preferences for a token
+
+**Input:**
+- URL Parameter: `tokenId` (string, required)
+- Body Fields:
+```json
+{
+  "allowNotifications": "boolean (optional)",  // Enable/disable notifications
+  "allowSound": "boolean (optional)",          // Enable/disable sound
+  "allowVibration": "boolean (optional)"       // Enable/disable vibration
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Token preferences updated successfully",
+  "data": {
+    "tokenId": "65f1a2b3c4d5e6f7g8h9i0j1",
+    "preferences": {
+      "allowNotifications": true,
+      "allowSound": false,
+      "allowVibration": true
+    }
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `PUT`
+- URL: `http://localhost:3000/api/notifications/token/65f1a2b3c4d5e6f7g8h9i0j1/preferences`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "allowNotifications": true,
+  "allowSound": false,
+  "allowVibration": true
+}
+```
+
+---
+
+### 7. **POST** `/api/notifications/send` - Send to One User
+
+**Description:** Send a push notification to a specific user
+
+**Input Fields:**
+```json
+{
+  "userId": "string (required)",           // Target user ID
+  "title": "string (required)",            // Notification title
+  "body": "string (required)",             // Notification body/message
+  "data": {                                // Optional custom data
+    "key": "value",                        // Any key-value pairs
+    "screen": "string",                    // Screen to navigate to
+    "action": "string"                     // Action to perform
+  },
+  "sound": "string (optional)",            // Sound file name (default: "default")
+  "badge": "number (optional)",            // Badge count (iOS)
+  "channelId": "string (optional)",        // Android channel ID (default: "default")
+  "subtitle": "string (optional)",         // iOS subtitle
+  "categoryId": "string (optional)"        // iOS category ID
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Notification sent successfully",
+  "data": {
+    "sentCount": 1,
+    "errorCount": 0,
+    "userId": "user123"
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/send`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "userId": "user123",
+  "title": "Hello!",
+  "body": "This is a test notification",
+  "data": {
+    "screen": "Home",
+    "action": "open",
+    "customData": "any value"
+  },
+  "sound": "default",
+  "badge": 1,
+  "channelId": "default"
+}
+```
+
+---
+
+### 8. **POST** `/api/notifications/send-multiple` - Send to Multiple Users
+
+**Description:** Send a push notification to multiple users
+
+**Input Fields:**
+```json
+{
+  "userIds": ["string (required)"],        // Array of user IDs
+  "title": "string (required)",            // Notification title
+  "body": "string (required)",             // Notification body/message
+  "data": {                                // Optional custom data
+    "key": "value"                         // Any key-value pairs
+  },
+  "sound": "string (optional)",            // Sound file name
+  "badge": "number (optional)",            // Badge count (iOS)
+  "channelId": "string (optional)",        // Android channel ID
+  "subtitle": "string (optional)",         // iOS subtitle
+  "categoryId": "string (optional)"        // iOS category ID
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Notifications sent successfully",
+  "data": {
+    "sentCount": 3,
+    "errorCount": 0,
+    "targetUserCount": 3
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/send-multiple`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "userIds": ["user123", "user456", "user789"],
+  "title": "Group Notification",
+  "body": "Message for multiple users",
+  "data": {
+    "type": "announcement",
+    "priority": "high"
+  },
+  "sound": "default"
+}
+```
+
+---
+
+### 9. **POST** `/api/notifications/send-all` - Send to All Users
+
+**Description:** Send a push notification to all registered users
+
+**Input Fields:**
+```json
+{
+  "title": "string (required)",            // Notification title
+  "body": "string (required)",             // Notification body/message
+  "data": {                                // Optional custom data
+    "key": "value"                         // Any key-value pairs
+  },
+  "sound": "string (optional)",            // Sound file name
+  "badge": "number (optional)",            // Badge count (iOS)
+  "channelId": "string (optional)",        // Android channel ID
+  "subtitle": "string (optional)",         // iOS subtitle
+  "categoryId": "string (optional)"        // iOS category ID
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Notifications sent to all users",
+  "data": {
+    "sentCount": 15,
+    "errorCount": 0
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/send-all`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "title": "Important Update",
+  "body": "New features available!",
+  "data": {
+    "version": "2.0.0",
+    "type": "update"
+  },
+  "sound": "default",
+  "badge": 1
+}
+```
+
+---
+
+### 10. **POST** `/api/notifications/send-by-device` - Send by Device Type
+
+**Description:** Send a push notification to users with specific device types
+
+**Input Fields:**
+```json
+{
+  "deviceType": "string (required)",       // ios, android, or web
+  "title": "string (required)",            // Notification title
+  "body": "string (required)",             // Notification body/message
+  "data": {                                // Optional custom data
+    "key": "value"                         // Any key-value pairs
+  },
+  "sound": "string (optional)",            // Sound file name
+  "badge": "number (optional)",            // Badge count (iOS)
+  "channelId": "string (optional)",        // Android channel ID
+  "subtitle": "string (optional)",         // iOS subtitle
+  "categoryId": "string (optional)"        // iOS category ID
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Notifications sent to android devices",
+  "data": {
+    "sentCount": 8,
+    "errorCount": 0,
+    "deviceType": "android"
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/send-by-device`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "deviceType": "android",
+  "title": "Android Update",
+  "body": "New Android features available!",
+  "data": {
+    "platform": "android",
+    "version": "1.2.0"
+  },
+  "channelId": "updates"
+}
+```
+
+---
+
+### 11. **GET** `/api/notifications/stats` - Get Statistics
+
+**Description:** Get notification statistics and analytics
+
+**Input:** None
+
+**Output:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalTokens": 25,
+    "activeTokens": 20,
+    "inactiveTokens": 5,
+    "totalNotifications": 150,
+    "avgNotificationsPerToken": 7.5,
+    "deviceBreakdown": [
+      {
+        "_id": "android",
+        "count": 12,
+        "avgNotifications": 8.2
+      },
+      {
+        "_id": "ios",
+        "count": 8,
+        "avgNotifications": 6.5
+      }
+    ],
+    "recentActiveTokens": 18
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `GET`
+- URL: `http://localhost:3000/api/notifications/stats`
+- Headers: None required
+
+---
+
+### 12. **POST** `/api/notifications/cleanup` - Cleanup Inactive Tokens
+
+**Description:** Clean up tokens that haven't been used for a specified period
+
+**Input Fields:**
+```json
+{
+  "daysInactive": "number (optional)"      // Days of inactivity (default: 30)
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "message": "Cleanup completed successfully",
+  "data": {
+    "success": true,
+    "deactivatedCount": 3
+  }
+}
+```
+
+**Postman Setup:**
+- Method: `POST`
+- URL: `http://localhost:3000/api/notifications/cleanup`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "daysInactive": 30
+}
+```
+
+---
+
+## 🧪 Postman Collection Setup
+
+### Import Postman Collection
+
+1. **Create a new Collection in Postman:**
+   - Name: "Expo Push Notifications API"
+   - Base URL: `http://localhost:3000`
+
+2. **Add Environment Variables:**
+   - `base_url`: `http://localhost:3000`
+   - `user_id`: `user123`
+   - `token_id`: `65f1a2b3c4d5e6f7g8h9i0j1`
+
+3. **Test Sequence:**
+   ```
+   1. GET /health (Check server)
+   2. POST /api/notifications/token (Register token)
+   3. GET /api/notifications/tokens/{{user_id}} (Get tokens)
+   4. POST /api/notifications/send (Send notification)
+   5. GET /api/notifications/stats (Check stats)
+   ```
+
+### Common Error Responses
+
+**400 Bad Request:**
+```json
+{
+  "success": false,
+  "message": "userId, token, and deviceType are required",
+  "required": ["userId", "token", "deviceType"]
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "success": false,
+  "message": "Token not found"
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "success": false,
+  "message": "Failed to send notification",
+  "error": "Detailed error message (development only)"
+}
+```
+
+## 🧪 Quick Testing with cURL
+
+### Basic Test Sequence
+
+1. **Check server health:**
+```bash
+curl http://localhost:3000/health
+```
+
+2. **Register a token:**
 ```bash
 curl -X POST http://localhost:3000/api/notifications/token \
   -H "Content-Type: application/json" \
@@ -203,8 +796,7 @@ curl -X POST http://localhost:3000/api/notifications/token \
   }'
 ```
 
-### 2. Send Notification to One User
-
+3. **Send notification:**
 ```bash
 curl -X POST http://localhost:3000/api/notifications/send \
   -H "Content-Type: application/json" \
@@ -215,43 +807,11 @@ curl -X POST http://localhost:3000/api/notifications/send \
     "data": {
       "screen": "Home",
       "action": "open"
-    },
-    "sound": "default",
-    "badge": 1
-  }'
-```
-
-### 3. Send to Multiple Users
-
-```bash
-curl -X POST http://localhost:3000/api/notifications/send-multiple \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userIds": ["user123", "user456", "user789"],
-    "title": "Group Notification",
-    "body": "Message for multiple users",
-    "data": {
-      "type": "announcement"
     }
   }'
 ```
 
-### 4. Send to All Users
-
-```bash
-curl -X POST http://localhost:3000/api/notifications/send-all \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Important Update",
-    "body": "New features available!",
-    "data": {
-      "version": "2.0.0"
-    }
-  }'
-```
-
-### 5. Get Statistics
-
+4. **Check statistics:**
 ```bash
 curl http://localhost:3000/api/notifications/stats
 ```
