@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import simpleRoutes from './routes/simpleRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import { generalLimiter, notificationLimiter, tokenRegistrationLimiter } from './middleware/rateLimiter.js';
 
@@ -78,13 +79,18 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     endpoints: {
+      // Simple Push Notifications (No Auth Required)
+      simpleStatus: 'GET /api/simple/status',
+      simpleSend: 'POST /api/simple/send',
+      simpleSendMultiple: 'POST /api/simple/send-multiple',
+      simpleValidateToken: 'POST /api/simple/validate-token',
       // Authentication
       register: 'POST /api/auth/register',
       login: 'POST /api/auth/login',
       profile: 'GET /api/auth/profile',
       verify: 'GET /api/auth/verify',
       logout: 'POST /api/auth/logout',
-      // Notifications
+      // Advanced Notifications
       tokenRegistration: 'POST /api/notifications/token',
       sendToUser: 'POST /api/notifications/send',
       sendToMultiple: 'POST /api/notifications/send-multiple',
@@ -116,6 +122,7 @@ app.use('/api/notifications', (req, res, next) => {
 });
 
 // API routes
+app.use('/api/simple', simpleRoutes); // Simple notifications (no auth)
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 
@@ -132,6 +139,10 @@ app.use((req, res) => {
     availableEndpoints: [
       'GET /',
       'GET /health',
+      'GET /api/simple/status',
+      'POST /api/simple/send',
+      'POST /api/simple/send-multiple',
+      'POST /api/simple/validate-token',
       'POST /api/auth/register',
       'POST /api/auth/login',
       'GET /api/auth/profile',
