@@ -7,7 +7,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 // Import server API functions
-import { sendNotification, createNotificationPayload } from "./server/api/notificationService.js";
+import { sendNotification, createNotificationPayload } from "./server/api/notificationService";
 
 export interface PushNotificationState {
   expoPushToken?: Notifications.ExpoPushToken;

@@ -6,13 +6,28 @@ import {
   validateToken,
   createNotificationPayload,
   createMultipleNotificationPayload,
-} from '../api/notificationService.js';
+} from '../api/notificationService';
+
+// Types
+interface NotificationData {
+  token: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+}
+
+interface MultipleNotificationData {
+  tokens: string[];
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+}
 
 // Query keys for TanStack Query
 export const notificationKeys = {
-  all: ['notifications'],
-  status: () => [...notificationKeys.all, 'status'],
-  validate: (token) => [...notificationKeys.all, 'validate', token],
+  all: ['notifications'] as const,
+  status: () => [...notificationKeys.all, 'status'] as const,
+  validate: (token: string) => [...notificationKeys.all, 'validate', token] as const,
 };
 
 /**
@@ -30,7 +45,7 @@ export const useApiStatus = () => {
 /**
  * Hook to validate Expo push token
  */
-export const useValidateToken = (token) => {
+export const useValidateToken = (token: string) => {
   return useQuery({
     queryKey: notificationKeys.validate(token),
     queryFn: () => validateToken(token),
@@ -83,3 +98,4 @@ export const useValidateTokenMutation = () => {
     },
   });
 };
+

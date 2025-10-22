@@ -14,16 +14,16 @@ import {
   useSendNotification,
   useSendMultipleNotifications,
   useValidateTokenMutation,
-} from '../hooks/useNotificationApi.js';
-import { createNotificationPayload, createMultipleNotificationPayload } from '../api/notificationService.js';
+} from '../hooks/useNotificationApi';
+import { createNotificationPayload, createMultipleNotificationPayload } from '../api/notificationService';
 
-const NotificationTester = () => {
+const NotificationTester: React.FC = () => {
   // State for form inputs
-  const [token, setToken] = useState('');
-  const [title, setTitle] = useState('Test Notification');
-  const [body, setBody] = useState('This is a test notification from the app');
-  const [multipleTokens, setMultipleTokens] = useState('');
-  const [customData, setCustomData] = useState('{"screen": "Home", "action": "test"}');
+  const [token, setToken] = useState<string>('');
+  const [title, setTitle] = useState<string>('Test Notification');
+  const [body, setBody] = useState<string>('This is a test notification from the app');
+  const [multipleTokens, setMultipleTokens] = useState<string>('');
+  const [customData, setCustomData] = useState<string>('{"screen": "Home", "action": "test"}');
 
   // API hooks
   const { data: statusData, isLoading: statusLoading, refetch: refetchStatus } = useApiStatus();
@@ -32,7 +32,7 @@ const NotificationTester = () => {
   const validateTokenMutation = useValidateTokenMutation();
 
   // Handle single notification
-  const handleSendNotification = async () => {
+  const handleSendNotification = async (): Promise<void> => {
     if (!token.trim()) {
       Alert.alert('Error', 'Please enter a push token');
       return;
@@ -44,7 +44,7 @@ const NotificationTester = () => {
     }
 
     try {
-      let data = {};
+      let data: Record<string, any> = {};
       if (customData.trim()) {
         data = JSON.parse(customData);
       }
@@ -53,13 +53,13 @@ const NotificationTester = () => {
       
       await sendNotificationMutation.mutateAsync(payload);
       Alert.alert('Success', 'Notification sent successfully!');
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
 
   // Handle multiple notifications
-  const handleSendMultiple = async () => {
+  const handleSendMultiple = async (): Promise<void> => {
     if (!multipleTokens.trim()) {
       Alert.alert('Error', 'Please enter push tokens (one per line)');
       return;
@@ -81,7 +81,7 @@ const NotificationTester = () => {
         return;
       }
 
-      let data = {};
+      let data: Record<string, any> = {};
       if (customData.trim()) {
         data = JSON.parse(customData);
       }
@@ -90,13 +90,13 @@ const NotificationTester = () => {
       
       await sendMultipleMutation.mutateAsync(payload);
       Alert.alert('Success', `Notifications sent to ${tokens.length} devices!`);
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
 
   // Handle token validation
-  const handleValidateToken = async () => {
+  const handleValidateToken = async (): Promise<void> => {
     if (!token.trim()) {
       Alert.alert('Error', 'Please enter a push token to validate');
       return;
@@ -106,9 +106,9 @@ const NotificationTester = () => {
       const result = await validateTokenMutation.mutateAsync(token.trim());
       Alert.alert(
         'Token Validation',
-        `Token is ${result.data.isValid ? 'VALID' : 'INVALID'}\n\n${result.data.message}`
+        `Token is ${result.data?.isValid ? 'VALID' : 'INVALID'}\n\n${result.data?.message}`
       );
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
@@ -120,7 +120,7 @@ const NotificationTester = () => {
       {/* API Status */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>API Status</Text>
-        <TouchableOpacity style={styles.button} onPress={refetchStatus}>
+        <TouchableOpacity style={styles.button} onPress={() => refetchStatus()}>
           <Text style={styles.buttonText}>Check Status</Text>
         </TouchableOpacity>
         {statusLoading ? (
@@ -312,3 +312,4 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationTester;
+

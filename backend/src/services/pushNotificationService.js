@@ -18,7 +18,6 @@ class PushNotificationService {
    */
   async sendToUser(userId, notification) {
     try {
-      console.log(`📤 Sending notification to user: ${userId}`);
       
       // Find all active tokens for the user
       const tokenDocs = await PushToken.findActiveTokensByUser(userId);

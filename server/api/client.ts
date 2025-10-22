@@ -1,8 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
+import { apiIpAdress } from './apiIpAdress';
 
 // Create axios instance with base configuration
-const apiClient = axios.create({
-  baseURL: 'http://localhost:3000/api/simple', // Your backend simple API
+const apiClient: AxiosInstance = axios.create({
+  baseURL: `${apiIpAdress}/api/simple`, // Your backend simple API
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -34,3 +35,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+
